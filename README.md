@@ -38,7 +38,17 @@ Map the mess before cutting. Quantify:
 - Execution flow density (functions called from too many places)
 - Security surface (exposed endpoints, auth patterns, secrets handling)
 
-Output: a **shared map**, not individual hunches. The index becomes the before-measurement for the transformation. Without metrics, "we improved it" is a feeling, not a fact.
+Establish the **baseline measurement** using static analysis:
+- `pyscn analyze /path/ --json` — health score, structural clones, dead code, cohesion (LCOM4), coupling (CBO)
+- `radon cc /path/ -a -s` — cyclomatic complexity per function
+- `radon mi /path/ -s` — maintainability index per module
+- `wily build /path/ && wily rank /path/` — complexity ranking across the codebase
+- `deepcsim-cli /path/ --threshold 80 --json` — cross-file structural duplication
+- **GitNexus** (if available) — index the repo into a knowledge graph, then trace execution flows and map architectural boundaries. This shows how the codebase evolved, where the call chains concentrate, and which modules enforce (or fail to enforce) separation. Particularly valuable for identifying god files and coupling hotspots that the other tools quantify but don't explain.
+
+These numbers are the before-measurement. Without them, "we improved it" is a feeling, not a fact.
+
+Output: a **shared map**, not individual hunches. The index becomes the quantitative baseline for the transformation.
 
 This phase prevents the "let me just refactor this one file" impulse. You don't cut until you see the whole picture.
 
@@ -57,6 +67,8 @@ Single Responsibility enforced by filename: if you can't name the file after its
 ### Phase 4: Deduplicate
 
 Pick canonical versions. Find the hub objects that touch disproportionate flows and distribute their responsibilities to focused modules.
+
+Use `deepcsim-cli /path/ --threshold 80 --json` to surface structural clones — code that does the same thing with different variable names. `pyscn analyze --select clones` catches Type 1-4 clones within files. Between the two, you see both intra-file and cross-file duplication before deciding what to merge.
 
 Pattern: trace flow density → find the hub → distribute to spokes.
 
@@ -79,6 +91,8 @@ Infrastructure hardening comes **last** — you can't harden what isn't structur
 - Secrets detection in CI
 - Docker socket isolation (never mount directly)
 - Deployment hardening (graceful shutdown, health checks, restart policies)
+
+Run the **full measurement suite again** — the same tools from Phase 1, same flags. Compare directly against the baseline. This is the after-measurement that proves the transformation worked (or didn't). Specific gates: no function with CC > 15 survives, health score must not regress from Phase 1, any new duplication introduced during Phases 3-6 must be resolved.
 
 ## Principles
 
@@ -112,6 +126,65 @@ Metrics that matter:
 ### Environment Impact Assessment
 
 Before each phase merge, assess: **what does this change for each deployment target?** Security hardening (Phase 7) removing port exposure is correct for production but breaks staging environments that proxy through localhost. This must be caught before merge, not after.
+
+## Measurement Toolkit
+
+The framework requires quantitative before/after measurement. These are the tools that produce those numbers.
+
+| Tool | What It Measures | Install | Key Command |
+|---|---|---|---|
+| **pyscn** | Health score, structural clones (Type 1-4), dead code, cohesion (LCOM4), coupling (CBO) | `pipx install pyscn` | `pyscn analyze /path/ --json` |
+| **DeepCSIM** | Cross-file structural duplication at function level (AST-based) | `pipx install deepcsim` | `deepcsim-cli /path/ --threshold 80 --json` |
+| **wily** | Complexity trends over git history | `pipx install wily` | `wily build /path/ && wily rank /path/` |
+| **radon** | Cyclomatic complexity (CC) and Maintainability Index (MI) per function/module | `pipx install radon` | `radon cc /path/ -a -s` |
+| **lizard** | Per-function complexity, language-agnostic | `pipx install lizard` | `lizard /path/ -T cyclomatic_complexity=15` |
+| **GitNexus** | Repo evolution: execution flow traces, call chains, security boundaries, architectural relationships | Knowledge graph service (MCP tools) | Query via MCP: `query`, `context`, `impact`, `cypher` |
+
+**How they complement each other**: `pyscn` gives a broad health score and catches intra-file clones. DeepCSIM catches cross-file structural duplication that `pyscn` misses. `wily` shows how complexity drifts over time (useful between Phase 1 and Phase 7 to prove improvement). `radon` gives granular function-level CC when you need to identify specific refactoring targets. `lizard` works across languages for polyglot codebases. GitNexus provides the evolutionary and architectural view that the other tools lack — it indexes a repo into a knowledge graph and traces execution flows, call chains, and security boundaries across modules. Where the other tools give point-in-time snapshots of code quality, GitNexus answers structural questions: "which modules enforce this boundary?", "what is the full call chain from entry point to database?", "what breaks if this function changes?"
+
+**Grading** (pyscn health score): A (90-100), B (80-89), C (70-79), D (50-69), F (<50). A codebase entering Phase 1 is typically D or F. The exit target depends on the starting point, but the direction must be demonstrable.
+
+## PR Workflow Integration
+
+Static analysis is not a one-time measurement — it integrates into the PR review process throughout the transformation. Three tiers, applied deterministically based on the scope of the change.
+
+### Tier 1: Full Scan
+
+Run when:
+- First session touching a repo not scanned in 7+ days
+- PR rejected for structural reasons (duplication, complexity, coupling)
+- Before major refactoring or new module work (Phases 3-5)
+- After merging 10+ PRs since last full scan (drift check)
+
+Tools: `pyscn analyze` + `deepcsim-cli` + `wily build/rank` + `radon cc` + `radon mi`
+
+Duration: 2-3 minutes per repo. Persist results for before/after comparison.
+
+### Tier 2: Targeted Scan
+
+Run when:
+- PR touches 5+ files or 200+ lines changed
+- New module or class introduced
+- Any PR review (at minimum: `deepcsim-cli` on changed directories + `wily diff` on changed files)
+
+Tools: `pyscn analyze --select complexity,dead_code,clones` + `deepcsim-cli` on changed directories + `wily diff` per changed file
+
+Duration: under 30 seconds.
+
+### Tier 3: No Scan
+
+- Simple bug fixes (< 5 files, < 200 lines)
+- Config changes, environment variables, CI tweaks
+- Documentation, comments, README updates
+
+### Hard Gates
+
+These are non-negotiable thresholds in PR review:
+
+- **CC > 15 on any function**: must refactor before merge. No exceptions.
+- **Health score regression**: if the `pyscn` health score drops compared to the last scan, the PR is flagged and the reviewer requests changes.
+- **New duplication detected**: flag as a refactoring opportunity. If the duplication is structural (DeepCSIM match > 80%), it must be resolved before merge.
+- **Dead code detected**: remove it in the PR. Do not track for later.
 
 ## Deployment Chain
 
