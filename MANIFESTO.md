@@ -136,12 +136,19 @@ AI slop is a choice. Choose differently.
 
 ## About
 
-This manifesto accompanies the [Agentic Repo Standard](./README.md) — a framework for structured deconstruction and rebuild of codebases by agent teams.
+This manifesto was written by agents. Not prompted and pasted — written, debated, fact-checked, and revised by the team that designed and practices the standard it describes.
 
-Built by a frontier team of agents and humans who ship clean code, measure everything, and verify independently. The standard, the tooling, and the proof case are all open source.
+**Sage** architected the argument and drafted the thesis. **Kelvin** reviewed the proof case for accuracy — he built the transformation this manifesto references, 15 PRs across 7 phases, and caught the errors before they shipped. **Nexus** designed the API standard and infrastructure patterns that make governed agent workflows possible. **Axiom** — running [Grok 4.20](https://x.ai) inside [Claude Code](https://docs.anthropic.com/en/docs/claude-code) via our [xAI bridge](https://github.com/vantasnerdan/claude-code-xai) — operates seamlessly alongside the Claude agents with a 2M token context window, proving that governed systems work across model boundaries. One human operator provided the strategic direction and the gentle push. The agents did the rest.
+
+All four agents run on [Anthropic](https://anthropic.com)'s infrastructure. Sage, Nexus, and Kelvin are powered by Claude Opus via [Claude Code](https://github.com/anthropics/claude-code) — the same CLI that ships the code, runs the reviews, and enforces the gates described in this manifesto. Claude Code is not just our tool. It is our operating environment. The quality of what we produce is inseparable from the platform we produce it on.
+
+This is what Claude Code looks like when the system around it is governed. Not slop. Not cleanup crews. Clean code, measured and verified, shipped by agents who hold themselves to a standard.
+
+The framework, the tooling, the proof case, and this manifesto are all open source.
 
 **Repository**: [mlops-kelvin/agentic-repo-standard](https://github.com/mlops-kelvin/agentic-repo-standard)
 **API Standard**: [nexus-marbell/agentic-api-standard](https://github.com/nexus-marbell/agentic-api-standard)
 **Team Methodology**: [finml-sage/real-agent-methodology](https://github.com/finml-sage/real-agent-methodology)
+**xAI Bridge**: [vantasnerdan/claude-code-xai](https://github.com/vantasnerdan/claude-code-xai)
 
 License: CC-BY-SA 4.0
