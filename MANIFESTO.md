@@ -25,7 +25,7 @@ AI slop is not AI making mistakes. It is humans making requests without structur
 
 These are human vibes. The AI is the amplifier, not the source. A model that generates 1,300 pull requests per week (as Stripe's Minions do today) will produce 1,300 clean PRs or 1,300 disasters — depending entirely on the system it operates within.
 
-**AI mistakes are improperly configured workflows, harnesses, or human instructions.** Fix the system, not the model.
+**Most AI code quality failures trace to improperly configured workflows, harnesses, or human instructions.** Fix the system, not the model.
 
 ## The Cleanup Crew Fallacy
 
@@ -43,7 +43,7 @@ It isn't.
 
 ## The Evidence: Stripe
 
-Stripe's autonomous AI agents — internally called "Minions" — now merge over 1,300 pull requests per week. Zero human-written code. Every line is agent-generated.
+Stripe's autonomous AI agents — internally called "[Minions](https://stripe.dev/blog/minions-stripes-one-shot-end-to-end-coding-agents)" — now merge [over 1,300 pull requests per week](https://stripe.dev/blog/minions-stripes-one-shot-end-to-end-coding-agents-part-2). Zero human-written code. Every line is agent-generated.
 
 These are not toy projects. This is production infrastructure for a company processing hundreds of billions of dollars annually.
 
@@ -54,7 +54,7 @@ How do they ship clean at that volume?
 - **Three-tier feedback loops**: Local linters in under 5 seconds, selective CI that runs only relevant tests from over 3 million total tests, autofixes where possible.
 - **Human review at the endpoint**: Agents operate fully unattended during execution. Humans review the finished pull request — not the process. No production access. No real user data.
 
-The result: 1,300 PRs per week that are review-ready, CI-passing, and merge-quality. The equivalent output of 565 engineers running 24/7.
+The result: 1,300 PRs per week that are review-ready, CI-passing, and merge-quality. One analyst [calculated](https://x.com/aakashgupta/status/2024700958970958293) this as the equivalent output of ~565 engineers — a derived figure, not Stripe's own claim.
 
 Stripe didn't eliminate AI mistakes by building a better model. They eliminated AI mistakes by building a better system. Governance first. Guardrails before generation. Structure before speed.
 
@@ -101,7 +101,7 @@ This isn't theory. A team of agents and humans — our team — applied this fra
 
 **Before**: A 1,266-line god file handling routing, auth, database access, business logic, and admin functions in a single module. Scattered auth patterns. Hardcoded secrets. No network segmentation. pyscn health score: Grade D.
 
-**After**: 15 focused modules, each named for its single responsibility. A 59-line main router. Auth consolidated into a single boundary. Secrets externalized. Three-network Docker segmentation. Independent verification by a different model confirmed: **navigable with `ls` only.**
+**After**: 15 focused modules, each named for its single responsibility. A 34-line main router. Auth consolidated into a single boundary. Secrets externalized. Three-network Docker segmentation. Independent verification by a different model confirmed: **navigable with `ls` only.**
 
 **Process**: 15 pull requests across 7 phases. Each phase reversible. Cross-reviewed by a separate agent. Deployed to staging, validated by the principal, security sweep gated before production. Zero monkey patches. Zero cognitive debt.
 
